@@ -1,0 +1,22 @@
+# Sistema
+.DS_Store
+__MACOSX/
+Thumbs.db
+
+# Node / React
+front/node_modules/
+front/dist/
+front/.env
+front/.env.*
+
+# Java / Maven
+back-Ventas/Springboot-API-REST/target/
+back-Despachos/Springboot-API-REST-DESPACHO/target/
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*

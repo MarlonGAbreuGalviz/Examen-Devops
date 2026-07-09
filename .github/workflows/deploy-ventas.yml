@@ -1,0 +1,81 @@
+name: Build, Push and Deploy Ventas
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "back-Ventas/**"
+      - ".github/workflows/deploy-ventas.yml"
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: backend-ventas
+  EKS_CLUSTER_NAME: eks-examen
+  DEPLOYMENT_NAME: ventas
+  CONTAINER_NAME: ventas
+  APP_DIR: back-Ventas/Springboot-API-REST
+
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build backend
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          mvn clean package -DskipTests
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Build and push Docker image
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+          IMAGE="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          IMAGE_LATEST="$REGISTRY/$ECR_REPOSITORY:latest"
+
+          docker build -f $APP_DIR/Dockerfile -t "$IMAGE" -t "$IMAGE_LATEST" ./$APP_DIR
+          docker push "$IMAGE"
+          docker push "$IMAGE_LATEST"
+
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+
+      - name: Deploy to EKS if deployment exists
+        run: |
+          if kubectl get deployment $DEPLOYMENT_NAME; then
+            kubectl set image deployment/$DEPLOYMENT_NAME $CONTAINER_NAME=$IMAGE
+            kubectl rollout status deployment/$DEPLOYMENT_NAME --timeout=5m
+            kubectl get pods -o wide
+          else
+            echo "Deployment $DEPLOYMENT_NAME no existe todavía. Ejecuta deploy-infra.yml primero."
+          fi

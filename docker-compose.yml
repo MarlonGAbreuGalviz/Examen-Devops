@@ -1,0 +1,83 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: examen-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: examendb
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ventas:
+    build:
+      context: ./back-Ventas/Springboot-API-REST
+      dockerfile: Dockerfile
+    container_name: examen-ventas
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      DB_ENDPOINT: mysql
+      DB_PORT: 3306
+      DB_NAME: ev3db
+      DB_USERNAME: root
+      DB_PASSWORD: rootpassword
+    ports:
+      - "8081:8080"
+    networks:
+      - app-network
+
+  despachos:
+    build:
+      context: ./back-Despachos/Springboot-API-REST-DESPACHO
+      dockerfile: Dockerfile
+    container_name: examen-despachos
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      DB_ENDPOINT: mysql
+      DB_PORT: 3306
+      DB_NAME: ev3db
+      DB_USERNAME: root
+      DB_PASSWORD: rootpassword
+    ports:
+      - "8082:8080"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: examen-frontend
+    restart: unless-stopped
+    depends_on:
+      - ventas
+      - despachos
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
+    
