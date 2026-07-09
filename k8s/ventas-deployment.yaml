@@ -23,55 +23,45 @@ spec:
           env:
             - name: SERVER_PORT
               value: "8080"
+
             - name: DB_ENDPOINT
               value: mysql-service
+
             - name: DB_PORT
               value: "3306"
+
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_NAME
+
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_USERNAME
+
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_PASSWORD
-          readinessProbe:
-            httpGet:
-              path: /api/v1/ventas
-              port: 8080
-            initialDelaySeconds: 60
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /api/v1/ventas
-              port: 8080
-            initialDelaySeconds: 90
-            periodSeconds: 20
+
           resources:
             requests:
               cpu: "200m"
               memory: "256Mi"
-            limits:
-              cpu: "1000m"
-              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ventas-service
+  name: ventas
 spec:
   type: NodePort
   selector:
     app: ventas
   ports:
-    - name: http
-      port: 8080
+    - port: 8080
       targetPort: 8080
       nodePort: 30081

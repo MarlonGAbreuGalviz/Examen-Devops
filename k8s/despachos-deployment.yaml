@@ -16,62 +16,52 @@ spec:
         layer: back
       containers:
         - name: despachos
-          image: 787246853100.dkr.ecr.us-east-1.amazonaws.com/backend-despachos:latest
+          image: 40377273057.dkr.ecr.us-east-1.amazonaws.com/backend-despachos:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
             - name: SERVER_PORT
               value: "8080"
+
             - name: DB_ENDPOINT
               value: mysql-service
+
             - name: DB_PORT
               value: "3306"
+
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_NAME
+
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_USERNAME
+
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_PASSWORD
-          readinessProbe:
-            httpGet:
-              path: /api/v1/despachos
-              port: 8080
-            initialDelaySeconds: 60
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /api/v1/despachos
-              port: 8080
-            initialDelaySeconds: 90
-            periodSeconds: 20
+
           resources:
             requests:
               cpu: "200m"
               memory: "256Mi"
-            limits:
-              cpu: "1000m"
-              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: despachos-service
+  name: despachos
 spec:
   type: NodePort
   selector:
     app: despachos
   ports:
-    - name: http
-      port: 8080
+    - port: 8080
       targetPort: 8080
       nodePort: 30082
