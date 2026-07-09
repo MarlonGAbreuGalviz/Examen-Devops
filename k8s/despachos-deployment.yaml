@@ -16,7 +16,7 @@ spec:
         layer: back
       containers:
         - name: despachos
-          image: 787246853100.dkr.ecr.us-east-1.amazonaws.com/ev3-backend-despachos:latest
+          image: 787246853100.dkr.ecr.us-east-1.amazonaws.com/backend-despachos:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

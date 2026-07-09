@@ -16,7 +16,7 @@ spec:
         layer: back
       containers:
         - name: ventas
-          image: 403772703057.dkr.ecr.us-east-1.amazonaws.com/ev3-backend-ventas:latest
+          image: 40377273057.dkr.ecr.us-east-1.amazonaws.com/backend-ventas:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
